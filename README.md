@@ -176,6 +176,10 @@ npm run build       # compile to dist/
 
 See [docs/SAFETY.md](docs/SAFETY.md), [docs/CONFIG.md](docs/CONFIG.md), and [docs/ROBINHOOD_CHAIN.md](docs/ROBINHOOD_CHAIN.md).
 
+## Contact
+
+Questions or issues: [t.me/lachancelab](https://t.me/lachancelab)
+
 ## License
 
 MIT
