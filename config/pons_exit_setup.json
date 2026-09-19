@@ -1,0 +1,8 @@
+{
+  "safety_checks_enabled": true,
+  "launchpad_filter_enabled": true,
+  "treat_unknown_registry_as_fail": true,
+  "take_profit_pct": 50.0,
+  "trailing_stop_pct": 25.0,
+  "stop_loss_pct": 37.5
+}
