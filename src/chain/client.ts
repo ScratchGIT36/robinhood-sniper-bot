@@ -16,7 +16,7 @@ const log = childLogger('chain');
 
 export interface ChainClients {
   publicClient: PublicClient;
-  /** separate WS-backed client for subscriptions when ROBINHOOD_WS_URL is set */
+  /** separate WS-backed client for subscriptions when CRONOS_WS_URL is set */
   subscriptionClient: PublicClient;
   walletClient: WalletClient | null;
   account: Account | null;
@@ -40,7 +40,6 @@ export function createClients(cfg: BotConfig): ChainClients {
     try {
       account = privateKeyToAccount(cfg.privateKey);
     } catch {
-      // do not include the key material in the error
       throw new Error('PRIVATE_KEY is not a valid secp256k1 private key');
     }
     if (cfg.walletAddress && account.address.toLowerCase() !== cfg.walletAddress.toLowerCase()) {

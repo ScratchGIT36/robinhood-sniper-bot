@@ -15,6 +15,9 @@ const numFromEnv = (def: number, constraints?: { min?: number; max?: number }) =
   z.preprocess(emptyToUndef, z.coerce.number().min(constraints?.min ?? 0).max(constraints?.max ?? Number.MAX_SAFE_INTEGER).default(def));
 
 const configSchema = z.object({
+  // Preferred Cronos env names; ROBINHOOD_* kept as legacy aliases.
+  CRONOS_RPC_URL: z.preprocess(emptyToUndef, z.string().url().optional()),
+  CRONOS_WS_URL: z.preprocess(emptyToUndef, z.string().url().optional()),
   ROBINHOOD_RPC_URL: z.preprocess(emptyToUndef, z.string().url().optional()),
   ROBINHOOD_WS_URL: z.preprocess(emptyToUndef, z.string().url().optional()),
   CHAIN_ID: z.preprocess(emptyToUndef, z.coerce.number().int().positive().optional()),
@@ -29,7 +32,8 @@ const configSchema = z.object({
   BASE_TOKEN_IS_NATIVE_WRAPPER: z.preprocess(emptyToUndef, z.enum(['true', 'false']).default('true')),
   MAX_BUY_ETH: numFromEnv(0.01, { min: 0 }),
   MAX_SLIPPAGE_BPS: numFromEnv(300, { min: 0, max: 10_000 }),
-  MAX_GAS_GWEI: numFromEnv(5, { min: 0 }),
+  // Cronos mainnet gas is typically thousands of gwei — keep a high default ceiling.
+  MAX_GAS_GWEI: numFromEnv(10_000, { min: 0 }),
   MIN_LIQUIDITY_ETH: numFromEnv(1, { min: 0 }),
   MAX_TOKEN_TAX_BPS: numFromEnv(1000, { min: 0, max: 10_000 }),
   TAKE_PROFIT_PERCENT: numFromEnv(50, { min: 0 }),
@@ -44,10 +48,26 @@ const configSchema = z.object({
   POSITION_POLL_MS: numFromEnv(5000, { min: 250 }),
 });
 
-export const ROBINHOOD_MAINNET_ID = 4663;
-export const ROBINHOOD_TESTNET_ID = 46630;
-export const ROBINHOOD_MAINNET_RPC = 'https://rpc.mainnet.chain.robinhood.com/';
-export const ROBINHOOD_TESTNET_RPC = 'https://rpc.testnet.chain.robinhood.com';
+/** Cronos EVM mainnet (Crypto.com). */
+export const CRONOS_MAINNET_ID = 25;
+/** Cronos EVM testnet. */
+export const CRONOS_TESTNET_ID = 338;
+export const CRONOS_MAINNET_RPC = 'https://evm.cronos.com/';
+export const CRONOS_TESTNET_RPC = 'https://evm-t3.cronos.com/';
+
+/** @deprecated Use CRONOS_* — kept so old imports do not break. */
+export const ROBINHOOD_MAINNET_ID = CRONOS_MAINNET_ID;
+/** @deprecated Use CRONOS_* */
+export const ROBINHOOD_TESTNET_ID = CRONOS_TESTNET_ID;
+/** @deprecated Use CRONOS_* */
+export const ROBINHOOD_MAINNET_RPC = CRONOS_MAINNET_RPC;
+/** @deprecated Use CRONOS_* */
+export const ROBINHOOD_TESTNET_RPC = CRONOS_TESTNET_RPC;
+
+/** VVS Finance (Uniswap V2–compatible) on Cronos mainnet — verify on explorer before live use. */
+export const VVS_FACTORY = '0x3b44b2a187a7b3824131f8db5a74194d0a42fc15' as Address;
+export const VVS_ROUTER = '0x145863Eb42Cf62847A6Ca784e6416C1682b1b2Ae' as Address;
+export const WCRO = '0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23' as Address;
 
 export interface BotConfig {
   rpcUrl: string;
@@ -91,16 +111,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): BotConfig {
   const e = parsed.data;
 
   const mode = e.MODE as Mode;
-  const defaultChainId = mode === 'testnet' ? ROBINHOOD_TESTNET_ID : ROBINHOOD_MAINNET_ID;
+  const defaultChainId = mode === 'testnet' ? CRONOS_TESTNET_ID : CRONOS_MAINNET_ID;
   const chainId = e.CHAIN_ID ?? defaultChainId;
-  const rpcUrl = e.ROBINHOOD_RPC_URL ?? (chainId === ROBINHOOD_TESTNET_ID ? ROBINHOOD_TESTNET_RPC : ROBINHOOD_MAINNET_RPC);
+  const rpcUrl =
+    e.CRONOS_RPC_URL ??
+    e.ROBINHOOD_RPC_URL ??
+    (chainId === CRONOS_TESTNET_ID ? CRONOS_TESTNET_RPC : CRONOS_MAINNET_RPC);
+  const wsUrl = e.CRONOS_WS_URL ?? e.ROBINHOOD_WS_URL;
 
-  // Cross-checks that zod field-level rules can't express.
-  if (mode === 'testnet' && chainId === ROBINHOOD_MAINNET_ID) {
-    throw new ConfigError('MODE=testnet but CHAIN_ID is the mainnet chain id (4663). Set CHAIN_ID=46630.');
+  if (mode === 'testnet' && chainId === CRONOS_MAINNET_ID) {
+    throw new ConfigError('MODE=testnet but CHAIN_ID is Cronos mainnet (25). Set CHAIN_ID=338.');
   }
-  if (mode === 'live' && chainId === ROBINHOOD_TESTNET_ID) {
-    throw new ConfigError('MODE=live but CHAIN_ID is the testnet chain id (46630). Set CHAIN_ID=4663.');
+  if (mode === 'live' && chainId === CRONOS_TESTNET_ID) {
+    throw new ConfigError('MODE=live but CHAIN_ID is Cronos testnet (338). Set CHAIN_ID=25.');
   }
   if (e.STOP_LOSS_PERCENT >= 100) {
     throw new ConfigError('STOP_LOSS_PERCENT must be below 100.');
@@ -108,7 +131,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): BotConfig {
 
   return {
     rpcUrl,
-    wsUrl: e.ROBINHOOD_WS_URL,
+    wsUrl,
     chainId,
     privateKey: e.PRIVATE_KEY as `0x${string}` | undefined,
     walletAddress: e.WALLET_ADDRESS,
@@ -140,8 +163,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): BotConfig {
 /**
  * Every condition that must hold before a LIVE trade is allowed.
  * Returns a list of human-readable blockers; empty list means ready.
- * `liveConfirmed` comes from the settings table (`bot confirm-live`),
- * `emergencyStop` from `bot emergency-stop`.
  */
 export function liveTradingBlockers(
   cfg: BotConfig,

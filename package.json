@@ -1,7 +1,7 @@
 {
-  "name": "robinhood-sniper-bot",
-  "version": "0.1.0",
-  "description": "Robinhood Chain token monitor and trading automation bot. Adapter-based DEX support, strict risk controls, testnet-first.",
+  "name": "cronos-sniper-bot",
+  "version": "0.2.0",
+  "description": "Cronos Chain (EVM) token monitor and trading automation bot. VVS / Uniswap-v2 adapter, strict risk controls, paper-first. Forked from LaChance-Lab/robinhood-sniper-bot.",
   "license": "MIT",
   "type": "module",
   "engines": {

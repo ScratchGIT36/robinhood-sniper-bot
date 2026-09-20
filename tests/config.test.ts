@@ -10,14 +10,22 @@ describe('config validation', () => {
     expect(cfg.mode).toBe('paper');
     expect(cfg.dexType).toBe('mock');
     expect(cfg.enableLiveTrading).toBe(false);
-    expect(cfg.chainId).toBe(4663);
+    expect(cfg.chainId).toBe(25);
+    expect(cfg.rpcUrl).toContain('cronos');
     expect(cfg.maxBuyEth).toBeGreaterThan(0);
   });
 
   it('uses testnet chain defaults when MODE=testnet', () => {
     const cfg = loadConfig({ MODE: 'testnet' });
-    expect(cfg.chainId).toBe(46630);
-    expect(cfg.rpcUrl).toContain('testnet');
+    expect(cfg.chainId).toBe(338);
+    expect(cfg.rpcUrl).toContain('cronos');
+  });
+
+  it('accepts CRONOS_RPC_URL and legacy ROBINHOOD_RPC_URL alias', () => {
+    const a = loadConfig({ CRONOS_RPC_URL: 'https://example.com/cronos' });
+    expect(a.rpcUrl).toBe('https://example.com/cronos');
+    const b = loadConfig({ ROBINHOOD_RPC_URL: 'https://example.com/legacy' });
+    expect(b.rpcUrl).toBe('https://example.com/legacy');
   });
 
   it('rejects an invalid private key format', () => {
@@ -31,8 +39,8 @@ describe('config validation', () => {
   });
 
   it('rejects testnet mode with mainnet chain id and vice versa', () => {
-    expect(() => loadConfig({ MODE: 'testnet', CHAIN_ID: '4663' })).toThrow(/mainnet chain id/);
-    expect(() => loadConfig({ MODE: 'live', CHAIN_ID: '46630' })).toThrow(/testnet chain id/);
+    expect(() => loadConfig({ MODE: 'testnet', CHAIN_ID: '25' })).toThrow(/mainnet/);
+    expect(() => loadConfig({ MODE: 'live', CHAIN_ID: '338' })).toThrow(/testnet/);
   });
 
   it('rejects out-of-range risk values', () => {
