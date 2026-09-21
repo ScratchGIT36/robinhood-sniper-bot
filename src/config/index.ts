@@ -24,7 +24,7 @@ const configSchema = z.object({
   PRIVATE_KEY: z.preprocess(emptyToUndef, z.string().regex(PRIVKEY_RE, 'must be a 0x-prefixed 32-byte hex private key').optional()),
   WALLET_ADDRESS: addressSchema,
   MODE: z.preprocess(emptyToUndef, z.enum(['paper', 'testnet', 'live']).default('paper')),
-  DEX_TYPE: z.preprocess(emptyToUndef, z.enum(['uniswap_v2', 'uniswap_v3', 'mock']).default('mock')),
+  DEX_TYPE: z.preprocess(emptyToUndef, z.enum(['uniswap_v2', 'uniswap_v3', 'mock', 'cronos_launch']).default('mock')),
   DEX_FACTORY_ADDRESS: addressSchema,
   DEX_ROUTER_ADDRESS: addressSchema,
   DEX_QUOTER_ADDRESS: addressSchema,

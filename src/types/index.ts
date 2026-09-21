@@ -2,7 +2,7 @@ export type Address = `0x${string}`;
 export type Hex = `0x${string}`;
 
 export type Mode = 'paper' | 'testnet' | 'live';
-export type DexType = 'uniswap_v2' | 'uniswap_v3' | 'mock';
+export type DexType = 'uniswap_v2' | 'uniswap_v3' | 'mock' | 'cronos_launch';
 
 export interface TokenMeta {
   address: Address;

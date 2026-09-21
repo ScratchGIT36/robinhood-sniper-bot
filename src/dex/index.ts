@@ -4,6 +4,7 @@ import type { DexAdapter } from './adapter.js';
 import { MockDexAdapter, MOCK_BASE_TOKEN } from './mock.js';
 import { UniswapV2Adapter } from './uniswapV2.js';
 import { UniswapV3Adapter } from './uniswapV3.js';
+import { CronosLaunchAdapter, CRONOS_LAUNCH_ENTRY, CRONOS_LAUNCH_FACTORY, CRONOS_LAUNCH_ROUTER, WCRO } from './cronosLaunch.js';
 
 export class DexConfigError extends Error {}
 
@@ -47,6 +48,18 @@ export function createAdapter(cfg: BotConfig, clients: ChainClients): DexAdapter
         baseIsNativeWrapper: cfg.baseTokenIsNativeWrapper,
       });
     }
+    case 'cronos_launch': {
+      const entry = cfg.dexRouterAddress ?? CRONOS_LAUNCH_ENTRY;
+      const baseToken = cfg.baseTokenAddress ?? WCRO;
+      return new CronosLaunchAdapter({
+        publicClient: clients.publicClient,
+        subscriptionClient: clients.subscriptionClient,
+        entry,
+        router: CRONOS_LAUNCH_ROUTER,
+        baseToken,
+        baseIsNativeWrapper: cfg.baseTokenIsNativeWrapper,
+      });
+    }
   }
 }
 
@@ -56,6 +69,9 @@ export function createAdapter(cfg: BotConfig, clients: ChainClients): DexAdapter
  */
 export function dexFullyConfigured(cfg: BotConfig): boolean {
   if (cfg.dexType === 'mock') return false;
+  if (cfg.dexType === 'cronos_launch') {
+    return Boolean((cfg.dexRouterAddress || CRONOS_LAUNCH_ENTRY) && (cfg.baseTokenAddress || WCRO));
+  }
   if (!cfg.dexFactoryAddress || !cfg.dexRouterAddress || !cfg.baseTokenAddress) return false;
   if (cfg.dexType === 'uniswap_v3' && !cfg.dexQuoterAddress) return false;
   return true;

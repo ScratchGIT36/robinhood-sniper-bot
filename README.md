@@ -40,6 +40,9 @@ MAX_GAS_GWEI=10000
 
 Verify those VVS/WCRO addresses on [Cronos Explorer](https://explorer.cronos.com/) before enabling live trading. Details: [docs/CRONOS_CHAIN.md](docs/CRONOS_CHAIN.md).
 
+For **Cronos Launch birth snipes** set `DEX_TYPE=cronos_launch` (watches `Launched` on the launch entry and buys via curve `buy`). See [docs/CRONOS_LAUNCH.md](docs/CRONOS_LAUNCH.md).
+
+
 ```bash
 npm run bot -- config-check
 npm run bot -- watch
@@ -47,7 +50,7 @@ npm run bot -- watch
 
 ## Components
 
-Same architecture as upstream: scanner, safety pipeline, trading engine, TP/SL, V2/V3/mock DEX adapters, CLI, SQLite. See CLI via `npm run bot -- help`.
+Same architecture as upstream: scanner, safety pipeline, trading engine, TP/SL, V2/V3/mock/cronos_launch DEX adapters, CLI, SQLite. See CLI via `npm run bot -- help`.
 
 ## Live trading
 

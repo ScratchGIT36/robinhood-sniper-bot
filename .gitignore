@@ -16,6 +16,9 @@ data/
 logs/
 *.log
 
+# START.bat process id
+.bot.pid
+
 # editor/os
 .DS_Store
 .idea/
